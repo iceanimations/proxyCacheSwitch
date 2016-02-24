@@ -181,15 +181,11 @@ class UI(Form, Base):
     def showGPUCache(self):
         try:
             node = self.getSelectionType()
-            print node
             if not node: return
             if type(node) == pc.nt.RedshiftProxyMesh:
                 filename = node.fileName.get()
                 filename = osp.splitext(filename)[0] + '.abc'
-                print filename
-                print osp.exists(filename)
                 if osp.exists(filename):
-                    print node.outMesh.outputs()[0]
                     pc.delete(node.outMesh.outputs()[0])
                     self.createGPUCache(filename)
         except Exception as ex:
