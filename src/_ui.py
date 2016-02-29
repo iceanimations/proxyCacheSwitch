@@ -3,24 +3,25 @@ Created on Jan 7, 2016
 
 @author: qurban.ali
 '''
-import pymel.core as pc
-import appUsageApp
-import qtify_maya_window as qtfy
+
 from uiContainer import uic
-from PyQt4.QtGui import QMessageBox, QFileDialog
-import msgBox
+from PyQt4.QtGui import QMessageBox, QFileDialog, QIcon
+from PyQt4.QtCore import QSize
+import qtify_maya_window as qtfy
 import os.path as osp
-import qutil
-import imaya
-import maya.cmds as cmds
+import backend
+import appUsageApp
+import cui
 import os
+
+reload(backend)
+reload(cui)
 
 root_path = osp.dirname(osp.dirname(__file__))
 ui_path = osp.join(root_path, 'ui')
+icon_path = osp.join(root_path, 'icons')
 
-__title__ = 'Proxy & GPU Cache Switch'
-
-pathKey = 'proxyCacheSwitch_pathKey'
+__title__ = 'ICE-DS'
 
 Form, Base = uic.loadUiType(osp.join(ui_path, 'main.ui'))
 class UI(Form, Base):
@@ -28,35 +29,132 @@ class UI(Form, Base):
         super(UI, self).__init__(parent)
         self.setupUi(self)
         self.setWindowTitle(__title__)
-        path = qutil.getOptionVar(pathKey)
-        self.lastPath = path if path else ''
+        self.proxyItems = []
+        self.gpuItems = []
         
-        self.editButton.clicked.connect(self.edit)
-        self.reloadButton.clicked.connect(self.reload)
-        self.showProxyButton.clicked.connect(self.showRedshiftProxy)
-        self.showGPUButton.clicked.connect(self.showGPUCache)
-        self.browseButton.clicked.connect(self.setPath)
-        self.exportButton.clicked.connect(self.export)
+        buttonsMapping = {self.proxyHLButton: 'HL.png',
+                          self.proxyToGPUButton: 'G.png',
+                          self.proxySelectButton: 'S.png',
+                          self.proxyReloadButton: 'R.png',
+                          self.proxyDeleteButton: 'X.png',
+                          self.gpuHLButton: 'HL.png',
+                          self.gpuToProxyButton: 'P.png',
+                          self.gpuSelectButton: 'S.png',
+                          self.gpuReloadButton: 'R.png',
+                          self.gpuDeleteButton: 'X.png',
+                          self.selectionHLButton: 'HL.png',
+                          self.selectionPGButton: 'PG.png',
+                          self.selectionFocusButton: 'F.png',
+                          self.selectionTearButton: 'T.png',
+                          self.selectionReloadButton: 'R.png',
+                          self.selectionDeleteButton: 'X.png'}
+        for btn, img in buttonsMapping.items():
+            btn.setIcon(QIcon(osp.join(icon_path, img)))
         
+        self.proxyHLButton.clicked.connect(self.switchProxiesToHL)
+        self.proxyToGPUButton.clicked.connect(self.switchProxiesToGPU)
+        self.proxySelectButton.clicked.connect(self.selectAllProxies)
+        self.proxyReloadButton.clicked.connect(self.reloadAllProxies)
+        self.proxyDeleteButton.clicked.connect(self.delelteAllProxies)
+        self.gpuHLButton.clicked.connect(self.switchGPUToHL)
+        self.gpuToProxyButton.clicked.connect(self.switchGPUToProxy)
+        self.gpuSelectButton.clicked.connect(self.selectAllGPUs)
+        self.gpuReloadButton.clicked.connect(self.reloadAllGPUs)
+        self.gpuDeleteButton.clicked.connect(self.deleteAllGPUs)
+        self.selectionHLButton.clicked.connect(self.switchSelectionToHL)
+        self.selectionPGButton.clicked.connect(self.switchPG)
+        self.selectionFocusButton.clicked.connect(self.focusSelection)
+        self.selectionTearButton.clicked.connect(self.tearSelection)
+        self.selectionReloadButton.clicked.connect(self.reloadSelection)
+        self.selectionDeleteButton.clicked.connect(self.deleteSelection)
+        self.refreshButton.clicked.connect(self.refresh)
+        
+        self.populate()
+
         appUsageApp.updateDatabase('proxyCacheSwitch')
         
-    def showMessage(self, **kwargs):
-        return msgBox.showMessage(self, title=__title__, **kwargs)
-    
-    def setPath(self):
-        filename = QFileDialog.getExistingDirectory(self, 'Select Folder', self.lastPath)
-        if filename:
-            self.pathBox.setText(filename)
-            self.lastPath = filename
-            qutil.addOptionVar(pathKey, filename)
+    def populate(self):
+        errors = []
+        for item in self.proxyItems:
+            item.deleteLater()
+        del self.proxyItems[:]
+        for item in self.gpuItems:
+            item.deleteLater()
+        del self.gpuItems[:]
+        pItems, err = backend.getProxyItems()
+        if err: errors.extend(err)
+        for pItem in pItems:
+            item = ProxyItem(self, pItem)
+            item.update()
+            self.proxyLayout.addWidget(item)
+            self.proxyItems.append(item)
+        gpuItems, err = backend.getGPUItems()
+        if err: errors.extend(err)
+        for gpuItem in gpuItems:
+            item = GPUItem(self, gpuItem)
+            item.update()
+            self.gpuCacheLayout.addWidget(item)
+            self.gpuItems.append(item)
+        if errors:
+            self.showMessage(msg='Errors occurred while populating the window',
+                             details='\n'.join(errors),
+                             icon=QMessageBox.Critical)
             
-    def getPath(self):
-        path = self.pathBox.text()
-        if not path or not osp.exists(path):
-            self.showMessage(msg='The system could not find the path specified',
-                             icon=QMessageBox.Information)
-            path = ''
-        return path
+    def deleteAllGPUs(self):
+        pass
+    
+    def delelteAllProxies(self):
+        pass
+            
+    def deleteSelection(self):
+        pass
+        
+    def refresh(self):
+        pass
+        
+    def reloadSelection(self):
+        pass
+    
+    def tearSelection(self):
+        pass
+        
+    def focusSelection(self):
+        pass
+        
+    def switchPG(self):
+        pass
+        
+    def switchSelectionToHL(self):
+        pass
+        
+    def reloadAllGPUs(self):
+        pass
+        
+    def selectAllGPUs(self):
+        pass
+        
+    def switchGPUToProxy(self):
+        pass
+        
+    def switchGPUToHL(self):
+        pass
+        
+    def reloadAllProxies(self):
+        pass
+        
+    def selectAllProxies(self):
+        for pItem in self.proxyItems:
+            pItem.select(add=True)
+        
+    def switchProxiesToHL(self):
+        '''switch all the proxies to H/L'''
+        pass
+
+    def switchProxiesToGPU(self):
+        pass
+        
+    def showMessage(self, **kwargs):
+        return cui.showMessage(self, title=__title__, **kwargs)
 
     def getSelectedMesh(self):
         sl = pc.ls(sl=True, type='mesh', dag=True)
@@ -68,37 +166,6 @@ class UI(Form, Base):
                              icon=QMessageBox.Information)
             return []
         return [mesh.firstParent() for mesh in sl]
-    
-    def getDirPath(self):
-        path = cmds.file(q=True, location=True)
-        if path and osp.exists(path):
-            return osp.dirname(path)
-
-    def export(self):
-        try:
-            path = self.getPath()
-            if path:
-                meshes = self.getSelectedMesh()
-                if meshes:
-                    for mesh in meshes:
-                        name = qutil.getNiceName(mesh.name())
-                        filePath = osp.join(path, name)
-                        pc.select(mesh)
-                        pc.mel.eval('file -force -options \"\" -typ \"Redshift Proxy\" -pr -es \"%s\";'%filePath.replace('\\', '/'))
-                        pc.mel.rsProxy(filePath.replace('\\', '/') +'.rs', fp=True, sl=True)
-                        pc.mel.gpuCache(mesh, startTime=1, endTime=1, optimize=True,
-                                        optimizationThreshold=40000,
-                                        writeMaterials=True, dataFormat="ogawa",
-                                        directory=path, fileName=name)
-                        pc.exportSelected(filePath, f=True, options="v=0",
-                                          typ=imaya.getFileType(), pr=True)
-                    if self.deleteButton.isChecked():
-                        if self.showProxyButton.isChecked():
-                            self.createReshiftProxy(filePath +'.rs').displayMode.set(0)
-                        else:
-                            self.createGPUCache(filePath +'.abc')
-        except Exception as ex:
-            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
 
     def createReshiftProxy(self, filePath):
         node = pc.PyNode(pc.mel.redshiftCreateProxy()[0])
@@ -141,29 +208,6 @@ class UI(Form, Base):
                                  icon=QMessageBox.Information)
                 return
             return sl
-
-    def edit(self):
-        try:
-            node = self.getSelectionType()
-            if not node: return
-            if type(node) == pc.nt.GpuCache:
-                filename = node.cacheFileName.get()
-            else:
-                filename = node.fileName.get()
-            if filename and osp.exists(filename):
-                filename = osp.splitext(filename)[0] + '.ma'
-                if not osp.exists(filename):
-                    filename = osp.splitext(filename)[0] + '.mb'
-                if osp.exists(filename):
-                    os.system('start %s'%osp.normpath(filename))
-                else:
-                    self.showMessage(msg='Could not find Maya file',
-                                     icon=QMessageBox.Critical)
-            else:
-                self.showMessage(msg='Could not find linked file',
-                                 icon=QMessageBox.Critical)
-        except Exception as ex:
-            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
     
     def showRedshiftProxy(self):
         try:
@@ -190,3 +234,72 @@ class UI(Form, Base):
                     self.createGPUCache(filename)
         except Exception as ex:
             self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
+            
+Form2, Base2 = uic.loadUiType(osp.join(ui_path, 'item.ui'))
+class BaseItem(Form2, Base2):
+    def __init__(self, parent=None, item=None):
+        super(BaseItem, self).__init__(parent)
+        self.setupUi(self)
+        self.parentWin = parent
+        self.item = item
+        
+        buttonsMapping = {self.hlButton: 'HL.png',
+                          self.selectButton: 'S.png',
+                          self.reloadButton: 'R.png',
+                          self.deleteButton: 'X.png'}
+        for btn, img in buttonsMapping.items():
+            btn.setIcon(QIcon(osp.join(icon_path, img)))
+        
+        self.hlButton.clicked.connect(self.switchToHL)
+        self.switchButton.clicked.connect(self.switch)
+        self.selectButton.clicked.connect(self.select)
+        self.browseButton.clicked.connect(self.browse)
+        self.reloadButton.clicked.connect(self.reload)
+        self.pathBox.textChanged.connect(self.handlePathChange)
+        self.deleteButton.clicked.connect(self.delete)
+        
+    def delete(self):
+        pass
+    
+    def update(self, item=None):
+        if item is not None:
+            self.item = item
+        self.pathBox.setText(self.item.getFileName())
+
+    def handlePathChange(self, path):
+        if self.item:
+            self.item.setFileName(path)
+
+    def reload(self):
+        pass
+    
+    def browse(self):
+        error = self.item.browse()
+        if error:
+            self.parentWin.showMessage(msg=error, icon=QMessageBox.Critical)
+        
+    def select(self, add=False):
+        self.item.select(add=add)
+        
+    def switch(self):
+        pass
+        
+    def switchToHL(self):
+        error = self.item.switchToHL()
+        if error:
+            self.parentWin.showMessage(msg=error,
+                                       icon=QMessageBox.Critical)
+            return
+        self.update()
+    
+class ProxyItem(BaseItem):
+    def __init__(self, parent, pItem):
+        super(ProxyItem, self).__init__(parent, pItem)
+        
+        self.switchButton.setIcon(QIcon(osp.join(icon_path, 'G.png')))
+
+class GPUItem(BaseItem):
+    def __init__(self, parent, gpuItem):
+        super(GPUItem, self).__init__(parent, gpuItem)
+
+        self.switchButton.setIcon(QIcon(osp.join(icon_path, 'P.png')))
