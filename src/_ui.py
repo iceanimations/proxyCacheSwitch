@@ -110,7 +110,7 @@ class UI(Form, Base):
         pass
         
     def refresh(self):
-        pass
+        self.populate()
         
     def reloadSelection(self):
         pass
