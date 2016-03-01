@@ -13,13 +13,14 @@ import os
 reload(iutil)
 
 def switchHLPath(path):
+    ext = osp.splitext(path)[-1]
     dirPath = osp.dirname(path)
     if 'low_res' in os.listdir(dirPath):
         dirPath = osp.join(dirPath, 'low_res')
     else:
         dirPath = osp.dirname(dirPath)
     files = os.listdir(dirPath)
-    files = [phile for phile in files if phile.endswith('.rs')]
+    files = [phile for phile in files if phile.endswith(ext)]
     files = [osp.join(dirPath, phile) for phile in files]
     try:
         return iutil.getLatestFile(files)
@@ -117,15 +118,15 @@ class ProxyItem(BaseItem):
         super(ProxyItem, self).__init__(node)
     
     def setFileName(self, name):
-        nodes = self.getAllInstances()
-        if nodes:
-            positions = {node: [node.t.get(), node.s.get(), node.r.get()] for node in nodes}
+#         nodes = self.getAllInstances()
+#         if nodes:
+#             positions = {node: [node.t.get(), node.s.get(), node.r.get()] for node in nodes}
         self.node.fileName.set(name)
-        if nodes:
-            for node, pos in positions.items():
-                node.t.set(pos[0])
-                node.s.set(pos[1])
-                node.r.set(pos[2])
+#         if nodes:
+#             for node, pos in positions.items():
+#                 node.t.set(pos[0])
+#                 node.s.set(pos[1])
+#                 node.r.set(pos[2])
     
     def getFileName(self):
         return self.node.fileName.get()
