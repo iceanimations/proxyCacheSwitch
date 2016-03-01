@@ -34,8 +34,10 @@ def getProxyItems():
         proxies = pc.ls(exactType=pc.nt.RedshiftProxyMesh)
         if proxies:
             for proxy in proxies:
-                if proxy.outMesh.outputs()[0].visibility.get():
-                    items.append(ProxyItem(proxy))
+                try:
+                    if proxy.outMesh.outputs()[0].visibility.get():
+                        items.append(ProxyItem(proxy))
+                except: pass
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
@@ -47,8 +49,10 @@ def getGPUItems():
         gpuCaches = pc.ls(exactType=pc.nt.GpuCache)
         if gpuCaches:
             for gpuCache in gpuCaches:
-                if gpuCache.firstParent().visibility.get():
-                    items.append(GPUItem(gpuCache))
+                try:
+                    if gpuCache.firstParent().visibility.get():
+                        items.append(GPUItem(gpuCache))
+                except: pass
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
@@ -61,6 +65,9 @@ class BaseItem(object):
         pass # to be implemented in child class
 
     def setFileName(self, name):
+        pass # to be implemented in child class
+    
+    def getAllInstances(self):
         pass # to be implemented in child class
     
     def copyTransform(self, source, target):
@@ -89,6 +96,15 @@ class BaseItem(object):
             if node.hasAttr('swn'):
                 if not node.swn.outputs() and not node.swn.inputs():
                     pc.deleteAttr(node.swn)
+                    
+    def reload(self):
+        filename = self.getFileName()
+        self.setFileName('')
+        self.setFileName(filename)
+        
+    def delete(self):
+        pc.delete(self.getAllInstances())
+        pc.delete(self.node)
 
 class ProxyItem(BaseItem):
     def __init__(self, node=None):
@@ -151,9 +167,6 @@ class ProxyItem(BaseItem):
     def select(self, add=False):
         nodes = self.getAllInstances()
         if nodes: pc.select(nodes, add=add)
-    
-    def reload(self):
-        pass
 
 class GPUItem(BaseItem):
     def __init__(self, node=None):
@@ -211,6 +224,3 @@ class GPUItem(BaseItem):
 
     def select(self, add=False):
         pc.select(self.getAllInstances(), add=add)
-    
-    def reload(self):
-        pass

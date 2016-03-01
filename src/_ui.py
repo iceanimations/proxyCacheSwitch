@@ -28,6 +28,9 @@ class UI(Form, Base):
     def __init__(self, parent=qtfy.getMayaWindow()):
         super(UI, self).__init__(parent)
         self.setupUi(self)
+        self.proxyDeleteButton.hide()
+        self.gpuDeleteButton.hide()
+        self.selectionDeleteButton.hide()
         self.setWindowTitle(__title__)
         self.proxyItems = []
         self.gpuItems = []
@@ -83,6 +86,7 @@ class UI(Form, Base):
         del self.gpuItems[:]
         pItems, err = backend.getProxyItems()
         if err: errors.extend(err)
+        self.proxyNumberLabel.setText("("+ str(len(pItems)) +")")
         for pItem in pItems:
             item = ProxyItem(self, pItem)
             item.update()
@@ -90,6 +94,7 @@ class UI(Form, Base):
             self.proxyItems.append(item)
         gpuItems, err = backend.getGPUItems()
         if err: errors.extend(err)
+        self.gpuCacheNumberLabel.setText("("+ str(len(gpuItems)) +")")
         for gpuItem in gpuItems:
             item = GPUItem(self, gpuItem)
             item.update()
@@ -161,6 +166,7 @@ class BaseItem(Form2, Base2):
     def __init__(self, parent=None, item=None):
         super(BaseItem, self).__init__(parent)
         self.setupUi(self)
+        self.deleteButton.hide()
         self.parentWin = parent
         self.item = item
         
@@ -180,20 +186,21 @@ class BaseItem(Form2, Base2):
         self.deleteButton.clicked.connect(self.delete)
         
     def delete(self):
-        pass
+        pass # to be implemented in child class
     
     def update(self, item=None):
         if item is not None:
             self.item = item
         self.pathBox.setText(self.item.getFileName())
+        self.numberLabel.setText(str(len(self.item.getAllInstances())))
 
     def handlePathChange(self, path):
         if self.item:
             self.item.setFileName(path)
 
     def reload(self):
-        pass
-    
+        self.item.reload()
+
     def browse(self):
         error = self.item.browse()
         if error:
@@ -219,6 +226,12 @@ class ProxyItem(BaseItem):
         super(ProxyItem, self).__init__(parent, pItem)
         
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'G.png')))
+        self.switchButton.setToolTip('Switch to GPU Cache')
+        
+    def delete(self):
+        self.item.delete()
+        self.parentWin.proxyItems.remove(self)
+        self.deleteLater()
         
     def switch(self):
         self.item.switchToGPU()
@@ -229,6 +242,12 @@ class GPUItem(BaseItem):
         super(GPUItem, self).__init__(parent, gpuItem)
 
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'P.png')))
+        self.switchButton.setToolTip('Switch to Proxy')
+    
+    def delete(self):
+        self.item.delete()
+        self.parentWin.gpuItems.remove(self)
+        self.deleteLater()
         
     def switch(self):
         self.item.switchToProxy()

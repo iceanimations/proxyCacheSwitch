@@ -26,6 +26,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="label">
+            <property name="toolTip">
+             <string>Total number of proxy files used in the scene</string>
+            </property>
             <property name="text">
              <string>Proxy</string>
             </property>
@@ -34,7 +37,7 @@
           <item>
            <widget class="QLabel" name="proxyNumberLabel">
             <property name="toolTip">
-             <string>Total number of proxies files used in the scene</string>
+             <string>Total number of proxy files used in the scene</string>
             </property>
             <property name="text">
              <string>N</string>
@@ -156,13 +159,16 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QLabel" name="label_3">
+            <property name="toolTip">
+             <string>Total number of GPU Cache files used in the scene</string>
+            </property>
             <property name="text">
              <string>GPU Cache</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="gpuCacheNumberBox">
+           <widget class="QLabel" name="gpuCacheNumberLabel">
             <property name="toolTip">
              <string>Total number of GPU Cache files used in the scene</string>
             </property>
