@@ -34,7 +34,8 @@ def getProxyItems():
         proxies = pc.ls(exactType=pc.nt.RedshiftProxyMesh)
         if proxies:
             for proxy in proxies:
-                items.append(ProxyItem(proxy))
+                if proxy.outMesh.outputs()[0].visibility.get():
+                    items.append(ProxyItem(proxy))
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
@@ -46,52 +47,26 @@ def getGPUItems():
         gpuCaches = pc.ls(exactType=pc.nt.GpuCache)
         if gpuCaches:
             for gpuCache in gpuCaches:
-                items.append(GPUItem(gpuCache))
+                if gpuCache.firstParent().visibility.get():
+                    items.append(GPUItem(gpuCache))
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
-
-class ProxyList(list):
-    def __init__(self, parentWin=None):
-        self.parentWin=parentWin
-        
-    def switchToHL(self):
-        pass
-    
-    def switchToGPU(self):
-        pass
-    
-    def select(self):
-        pass
-    
-    def reload(self):
-        pass
-
-class GPUList(list):
-    def __init__(self, parentWin=None):
-        self.parentWin=parentWin
-        
-    def switchToHL(self):
-        pass
-    
-    def switchToProxy(self):
-        pass
-    
-    def select(self):
-        pass
-    
-    def reload(self):
-        pass
     
 class BaseItem(object):
     def __init__(self, node=None):
         self.node = node
 
     def getFileName(self):
-        pass
+        pass # to be implemented in child class
 
     def setFileName(self, name):
-        pass
+        pass # to be implemented in child class
+    
+    def copyTransform(self, source, target):
+        target.t.set(source.t.get())
+        target.s.set(source.s.get())
+        target.r.set(source.r.get())
 
     def browse(self):
         path = self.getFileName()
@@ -109,35 +84,67 @@ class BaseItem(object):
                 return
         return 'The system could not find the path specified\n%s'%path
     
-    def setupTransformation(self):
-        pass
-        
+    def removeAttr(self):
+        for node in self.getAllInstances():
+            if node.hasAttr('swn'):
+                if not node.swn.outputs() and not node.swn.inputs():
+                    pc.deleteAttr(node.swn)
 
 class ProxyItem(BaseItem):
     def __init__(self, node=None):
         super(ProxyItem, self).__init__(node)
     
     def setFileName(self, name):
-#         nodes = self.getAllInstances()
-#         if nodes:
-#             positions = {node: [node.t.get(), node.s.get(), node.r.get()] for node in nodes}
         self.node.fileName.set(name)
-#         if nodes:
-#             for node, pos in positions.items():
-#                 node.t.set(pos[0])
-#                 node.s.set(pos[1])
-#                 node.r.set(pos[2])
     
     def getFileName(self):
         return self.node.fileName.get()
     
+    def createGPUCacheNode(self, filePath):
+        pc.select(cl=True)
+        xformNode = pc.createNode('transform')
+        pc.createNode('gpuCache', parent=xformNode).cacheFileName.set(filePath)
+        pc.xform(xformNode, centerPivots=True)
+        return xformNode
+    
     def switchToGPU(self):
-        pass
+        self.removeAttr()
+        nodes = self.getAllInstances()
+        if nodes:
+            gpuNode = None
+            for node in nodes:
+                if node.hasAttr('switchNode'):
+                    try:
+                        gpuNode = node.swn.inputs()[0]
+                    except IndexError:
+                        gpuNode = node.swn.outputs()[0]
+                    gpuNode.visibility.set(1)
+                    node.visibility.set(0)
+                else:
+                    if gpuNode:
+                        gpuNode = pc.instance(gpuNode)[0]
+                    else:
+                        gpuNode = self.createGPUCacheNode(osp.splitext(self.getFileName())[0] +'.abc')
+                    pc.addAttr(node, sn='swn', ln='switchNode', at='message', h=True)
+                    if not gpuNode.hasAttr('switchNode'):
+                        pc.addAttr(gpuNode, sn='swn', ln='switchNode', at='message', h=True)
+                    node.swn.connect(gpuNode.swn)
+                    node.visibility.set(0)
+                self.copyTransform(node, gpuNode)
     
     def getAllInstances(self):
         for transform in self.node.outMesh.outputs():
             try:
-                return transform.getShapes(ni=True)[0].listRelatives(ap=True)
+                nodes = transform.getShapes(ni=True)[0].listRelatives(ap=True)
+                tempNodes = []
+                for node in nodes:
+                    if not node.hasAttr('swn'):
+                        tempNodes.append(node)
+                for node in tempNodes:
+                    nodes.remove(node)
+                for node in tempNodes:
+                    nodes.append(node)
+                return nodes
             except:
                 pass
     
@@ -158,11 +165,52 @@ class GPUItem(BaseItem):
     def getFileName(self):
         return self.node.cacheFileName.get()
     
-    def switchToProxy(self):
-        pass
+    def createRedshiftProxyNode(self, filePath):
+        pc.select(cl=True)
+        node = pc.PyNode(pc.mel.redshiftCreateProxy()[0])
+        node.useFrameExtension.set(0)
+        node.fileName.set(filePath)
+        return node.outMesh.outputs()[0]
     
+    def switchToProxy(self):
+        self.removeAttr()
+        nodes = self.getAllInstances()
+        if nodes:
+            pNode = None
+            for node in nodes:
+                if node.hasAttr('switchNode'):
+                    try:
+                        pNode = node.swn.outputs()[0]
+                    except IndexError:
+                        pNode = node.swn.inputs()[0]
+                    pNode.visibility.set(1)
+                    node.visibility.set(0)
+                else:
+                    if pNode:
+                        pNode = pc.instance(pNode)[0]
+                    else:
+                        pNode = self.createRedshiftProxyNode(osp.splitext(self.getFileName())[0] +'.rs')
+                    pc.addAttr(node, sn='swn', ln='switchNode', at='message', h=True)
+                    if not pNode.hasAttr('switchNode'):
+                        pc.addAttr(pNode, sn='swn', ln='switchNode', at='message', h=True)
+                    node.swn.connect(pNode.swn)
+                    node.visibility.set(0)
+                self.copyTransform(node, pNode)
+                
+    def getAllInstances(self):
+        nodes = self.node.listRelatives(ap=True)
+        tempNodes = []
+        for node in nodes:
+            if not node.hasAttr('swn'):
+                tempNodes.append(node)
+        for node in tempNodes:
+            nodes.remove(node)
+        for node in tempNodes:
+            nodes.append(node)
+        return nodes
+
     def select(self, add=False):
-        pc.select(self.node.listRelatives(ap=True), add=add)
+        pc.select(self.getAllInstances(), add=add)
     
     def reload(self):
         pass

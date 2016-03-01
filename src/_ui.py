@@ -155,85 +155,6 @@ class UI(Form, Base):
         
     def showMessage(self, **kwargs):
         return cui.showMessage(self, title=__title__, **kwargs)
-
-    def getSelectedMesh(self):
-        sl = pc.ls(sl=True, type='mesh', dag=True)
-        if not sl:
-            self.showMessage(msg='No Mesh found in the selection',
-                             icon=QMessageBox.Information)
-        if len(sl) > 1:
-            self.showMessage(msg='More than one meshes are not allowed',
-                             icon=QMessageBox.Information)
-            return []
-        return [mesh.firstParent() for mesh in sl]
-
-    def createReshiftProxy(self, filePath):
-        node = pc.PyNode(pc.mel.redshiftCreateProxy()[0])
-        node.fileName.set(filePath)
-        return node
-
-    def createGPUCache(self, filePath):
-        xformNode = pc.createNode('transform', name='pCube1')
-        pc.createNode('gpuCache', name='pCube1Shape', parent=xformNode).cacheFileName.set(filePath)
-        pc.xform(xformNode, centerPivots=True)
-
-    def reload(self):
-        try:
-            node = self.getSelectionType()
-            if not node: return
-            if type(node) == pc.nt.GpuCache:
-                filename = node.cacheFileName.get()
-                node.cacheFileName.set('')
-                node.cacheFileName.set(filename)
-            else:
-                filename = node.fileName.get()
-                node.fileName.set('')
-                node.fileName.set(filename)
-        except Exception as ex:
-            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
-    
-    def getSelectionType(self):
-        sl = pc.ls(sl=True, dag=True, type='gpuCache')
-        if sl:
-            return sl[0]
-        else:
-            try:
-                sl = pc.ls(sl=True, type='mesh', dag=True, ni=True)[0].inMesh.inputs()[0]
-            except:
-                self.showMessage(msg='Could not find a valid selection',
-                                 icon=QMessageBox.Information)
-                return
-            if type(sl) != pc.nt.RedshiftProxyMesh:
-                self.showMessage(msg='Could not find a Proxy Node',
-                                 icon=QMessageBox.Information)
-                return
-            return sl
-    
-    def showRedshiftProxy(self):
-        try:
-            node = self.getSelectionType()
-            if not node: return
-            if type(node) == pc.nt.GpuCache:
-                filename = node.cacheFileName.get()
-                filename = osp.splitext(filename)[0] + '.rs'
-                if osp.exists(filename):
-                    pc.delete(node.firstParent())
-                    self.createReshiftProxy(filename)
-        except Exception as ex:
-            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
-    
-    def showGPUCache(self):
-        try:
-            node = self.getSelectionType()
-            if not node: return
-            if type(node) == pc.nt.RedshiftProxyMesh:
-                filename = node.fileName.get()
-                filename = osp.splitext(filename)[0] + '.abc'
-                if osp.exists(filename):
-                    pc.delete(node.outMesh.outputs()[0])
-                    self.createGPUCache(filename)
-        except Exception as ex:
-            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
             
 Form2, Base2 = uic.loadUiType(osp.join(ui_path, 'item.ui'))
 class BaseItem(Form2, Base2):
@@ -282,7 +203,8 @@ class BaseItem(Form2, Base2):
         self.item.select(add=add)
         
     def switch(self):
-        pass
+        '''switch to Proxy/GPU'''
+        pass # to be implemented in child class
         
     def switchToHL(self):
         error = self.item.switchToHL()
@@ -297,9 +219,17 @@ class ProxyItem(BaseItem):
         super(ProxyItem, self).__init__(parent, pItem)
         
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'G.png')))
+        
+    def switch(self):
+        self.item.switchToGPU()
+        self.parentWin.refresh()
 
 class GPUItem(BaseItem):
     def __init__(self, parent, gpuItem):
         super(GPUItem, self).__init__(parent, gpuItem)
 
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'P.png')))
+        
+    def switch(self):
+        self.item.switchToProxy()
+        self.parentWin.refresh()
