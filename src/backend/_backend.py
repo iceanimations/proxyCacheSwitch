@@ -12,20 +12,20 @@ import os
 
 reload(iutil)
 
-def switchHLPath(path):
+def switchHLPath(path, hi=False, low=False):
     ext = osp.splitext(path)[-1]
     dirPath = osp.dirname(path)
     if 'low_res' in os.listdir(dirPath):
+        if hi:
+            return path
         dirPath = osp.join(dirPath, 'low_res')
     else:
+        if low:
+            return path
         dirPath = osp.dirname(dirPath)
-    files = os.listdir(dirPath)
-    files = [phile for phile in files if phile.endswith(ext)]
-    files = [osp.join(dirPath, phile) for phile in files]
     try:
-        return iutil.getLatestFile(files)
+        return iutil.getLatestFile([osp.join(dirPath, phile) for phile in os.listdir(dirPath) if phile.endswith(ext)])
     except: pass
-        
 
 def getProxyItems():
     errors = []
@@ -82,6 +82,22 @@ class BaseItem(object):
                 subprocess.call('explorer %s'%osp.normpath(osp.dirname(path)), shell=True)
                 return
         return 'The system could not find the path specified'
+    
+    def switchToHi(self):
+        path = switchHLPath(self.getFileName(), hi=True)
+        if path:
+            if osp.exists(path):
+                self.setFileName(path)
+                return
+        return 'The system could not find the path specified\n%s'%path
+    
+    def switchToLow(self):
+        path = switchHLPath(self.getFileName(), low=True)
+        if path:
+            if osp.exists(path):
+                self.setFileName(path)
+                return
+        return 'The system could not find the path specified\n%s'%path
 
     def switchToHL(self):
         path = switchHLPath(self.getFileName())

@@ -12,7 +12,6 @@ import os.path as osp
 import backend
 import appUsageApp
 import cui
-import os
 
 reload(backend)
 reload(cui)
@@ -32,6 +31,9 @@ class UI(Form, Base):
         self.gpuDeleteButton.hide()
         self.selectionDeleteButton.hide()
         self.setWindowTitle(__title__)
+        
+        self.proxyLow = False
+        self.gpuLow = False
         self.proxyItems = []
         self.gpuItems = []
         
@@ -65,7 +67,7 @@ class UI(Form, Base):
         self.gpuReloadButton.clicked.connect(self.reloadAllGPUs)
         self.gpuDeleteButton.clicked.connect(self.deleteAllGPUs)
         self.selectionHLButton.clicked.connect(self.switchSelectionToHL)
-        self.selectionPGButton.clicked.connect(self.switchPG)
+        self.selectionPGButton.clicked.connect(self.switchSelectionPG)
         self.selectionFocusButton.clicked.connect(self.focusSelection)
         self.selectionTearButton.clicked.connect(self.tearSelection)
         self.selectionReloadButton.clicked.connect(self.reloadSelection)
@@ -126,37 +128,68 @@ class UI(Form, Base):
     def focusSelection(self):
         pass
         
-    def switchPG(self):
+    def switchSelectionPG(self):
         pass
         
     def switchSelectionToHL(self):
         pass
         
     def reloadAllGPUs(self):
-        pass
+        for item in self.gpuItems:
+            item.reload()
         
     def selectAllGPUs(self):
-        pass
+        for item in self.gpuItems:
+            item.select(add=True)
         
     def switchGPUToProxy(self):
-        pass
+        for item in self.gpuItems:
+            item.switch(refresh=False)
+        self.refresh()
         
     def switchGPUToHL(self):
-        pass
+        errors = []
+        for item in self.gpuItems:
+            if self.gpuLow:
+                err = item.switchToLow()
+                if err: errors.append(err)
+            else:
+                err = item.switchToHi()
+                if err: errors.append(err)
+        self.gpuLow = not self.gpuLow
+        if errors:
+            self.showMessage(msg='Errors occurred while switching',
+                             details='\n'.join(errors),
+                             icon=QMessageBox.Critical)
         
     def reloadAllProxies(self):
-        pass
+        for item in self.proxyItems:
+            item.reload()
         
     def selectAllProxies(self):
-        for pItem in self.proxyItems:
-            pItem.select(add=True)
+        for item in self.proxyItems:
+            item.select(add=True)
         
     def switchProxiesToHL(self):
         '''switch all the proxies to H/L'''
-        pass
+        errors = []
+        for item in self.proxyItems:
+            if self.proxyLow:
+                err = item.switchToLow()
+                if err: errors.append(err)
+            else:
+                err = item.switchToHi()
+                if err: errors.append(err)
+        self.proxyLow = not self.proxyLow
+        if errors:
+            self.showMessage(msg='Errors occurred while switching',
+                             details='\n'.join(errors),
+                             icon=QMessageBox.Critical)
 
     def switchProxiesToGPU(self):
-        pass
+        for item in self.proxyItems:
+            item.switch(refresh=False)
+        self.refresh()
         
     def showMessage(self, **kwargs):
         return cui.showMessage(self, title=__title__, **kwargs)
@@ -178,7 +211,7 @@ class BaseItem(Form2, Base2):
             btn.setIcon(QIcon(osp.join(icon_path, img)))
         
         self.hlButton.clicked.connect(self.switchToHL)
-        self.switchButton.clicked.connect(self.switch)
+        self.switchButton.clicked.connect(lambda: self.switch())
         self.selectButton.clicked.connect(self.select)
         self.browseButton.clicked.connect(self.browse)
         self.reloadButton.clicked.connect(self.reload)
@@ -209,7 +242,17 @@ class BaseItem(Form2, Base2):
     def select(self, add=False):
         self.item.select(add=add)
         
-    def switch(self):
+    def switchToHi(self):
+        error = self.item.switchToHi()
+        self.update()
+        return error
+    
+    def switchToLow(self):
+        error = self.item.switchToLow()
+        self.update()
+        return error
+        
+    def switch(self, refresh=True):
         '''switch to Proxy/GPU'''
         pass # to be implemented in child class
         
@@ -233,9 +276,9 @@ class ProxyItem(BaseItem):
         self.parentWin.proxyItems.remove(self)
         self.deleteLater()
         
-    def switch(self):
+    def switch(self, refresh=True):
         self.item.switchToGPU()
-        self.parentWin.refresh()
+        if refresh: self.parentWin.refresh()
 
 class GPUItem(BaseItem):
     def __init__(self, parent, gpuItem):
@@ -249,6 +292,6 @@ class GPUItem(BaseItem):
         self.parentWin.gpuItems.remove(self)
         self.deleteLater()
         
-    def switch(self):
+    def switch(self, refresh=True):
         self.item.switchToProxy()
-        self.parentWin.refresh()
+        if refresh: self.parentWin.refresh()
