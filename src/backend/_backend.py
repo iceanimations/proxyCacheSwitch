@@ -71,9 +71,15 @@ class BaseItem(object):
         pass # to be implemented in child class
     
     def copyTransform(self, source, target):
-        target.t.set(source.t.get())
-        target.s.set(source.s.get())
-        target.r.set(source.r.get())
+        # Get the translation, rotation and scale in world space, of the source
+        trans = pc.xform(source, worldSpace=True, q=True, translation=True)
+        rot = pc.xform(source, worldSpace=True, q=True, rotation=True)
+        scal = pc.xform(source, worldSpace=True, q=True, scale=True)
+
+        # And apply to the target
+        pc.xform(target, worldSpace=True, translation=trans)
+        pc.xform(target, worldSpace=True, rotation=rot)
+        pc.xform(target, worldSpace=True, scale=scal)
 
     def browse(self):
         path = self.getFileName()

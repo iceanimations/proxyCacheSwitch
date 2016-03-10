@@ -20,7 +20,7 @@ root_path = osp.dirname(osp.dirname(__file__))
 ui_path = osp.join(root_path, 'ui')
 icon_path = osp.join(root_path, 'icons')
 
-__title__ = 'ICE-DS'
+__title__ = 'Proxy GPU Cache Switch'
 
 Form, Base = uic.loadUiType(osp.join(ui_path, 'main.ui'))
 class UI(Form, Base):
