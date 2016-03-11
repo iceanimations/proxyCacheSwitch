@@ -124,9 +124,28 @@ class UI(Form, Base):
     
     def tearSelection(self):
         pass
+    
+    def getItemFromSelection(self):
+        '''returns GPUItem/ProxyItem from selected object in the scene'''
+        item = None
+        for pItem in self.proxyItems:
+            if pItem.hasSelection():
+                item = pItem
+                break
+        for gpuItem in self.gpuItems:
+            if gpuItem.hasSelection():
+                item = gpuItem
+                break
+        return item
         
     def focusSelection(self):
-        pass
+        item = self.getItemFromSelection()
+        if item:
+            item.highlight()
+            item.parentWidget().parentWidget().parentWidget().ensureWidgetVisible(item)
+        else:
+            self.showMessage(msg='No UI Item found for the selected object',
+                             icon=QMessageBox.Information)
         
     def switchSelectionPG(self):
         pass
@@ -230,6 +249,12 @@ class BaseItem(Form2, Base2):
     def handlePathChange(self, path):
         if self.item:
             self.item.setFileName(path)
+            
+    def hasSelection(self):
+        return self.item.hasSelection()
+    
+    def highlight(self):
+        self.pathBox.setFocus()
 
     def reload(self):
         self.item.reload()

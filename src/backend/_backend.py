@@ -70,6 +70,11 @@ class BaseItem(object):
     def getAllInstances(self):
         pass # to be implemented in child class
     
+    def hasSelection(self):
+        instances = self.getAllInstances()
+        if len(set(pc.ls(sl=True)).intersection(set(instances))) > 0:
+            return True
+    
     def copyTransform(self, source, target):
         # Get the translation, rotation and scale in world space, of the source
         trans = pc.xform(source, worldSpace=True, q=True, translation=True)
