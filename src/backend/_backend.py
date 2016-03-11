@@ -154,6 +154,9 @@ class ProxyItem(BaseItem):
         self.removeAttr()
         nodes = self.getAllInstances()
         if nodes:
+            gpuGroup = pc.ls('switchable_gpus')
+            if not gpuGroup: gpuGroup = pc.group(em=True, n='switchable_gpus')
+            else: gpuGroup = gpuGroup[0]
             gpuNode = None
             for node in nodes:
                 if node.hasAttr('switchNode'):
@@ -168,6 +171,7 @@ class ProxyItem(BaseItem):
                         gpuNode = pc.instance(gpuNode)[0]
                     else:
                         gpuNode = self.createGPUCacheNode(osp.splitext(self.getFileName())[0] +'.abc')
+                    pc.parent(gpuNode, gpuGroup)
                     pc.addAttr(node, sn='swn', ln='switchNode', at='message', h=True)
                     if not gpuNode.hasAttr('switchNode'):
                         pc.addAttr(gpuNode, sn='swn', ln='switchNode', at='message', h=True)
@@ -216,6 +220,9 @@ class GPUItem(BaseItem):
         self.removeAttr()
         nodes = self.getAllInstances()
         if nodes:
+            proxyGroup = pc.ls('switchable_proxies')
+            if not proxyGroup: proxyGroup = pc.group(em=True, n='switchable_proxies')
+            else: proxyGroup = proxyGroup[0]
             pNode = None
             for node in nodes:
                 if node.hasAttr('switchNode'):
@@ -230,6 +237,7 @@ class GPUItem(BaseItem):
                         pNode = pc.instance(pNode)[0]
                     else:
                         pNode = self.createRedshiftProxyNode(osp.splitext(self.getFileName())[0] +'.rs')
+                    pc.parent(pNode, proxyGroup)
                     pc.addAttr(node, sn='swn', ln='switchNode', at='message', h=True)
                     if not pNode.hasAttr('switchNode'):
                         pc.addAttr(pNode, sn='swn', ln='switchNode', at='message', h=True)
