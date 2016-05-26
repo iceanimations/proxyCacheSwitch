@@ -123,7 +123,7 @@
              <x>0</x>
              <y>0</y>
              <width>439</width>
-             <height>170</height>
+             <height>169</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -256,7 +256,7 @@
              <x>0</x>
              <y>0</y>
              <width>439</width>
-             <height>170</height>
+             <height>169</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -373,14 +373,53 @@
      </layout>
     </item>
     <item>
-     <widget class="QPushButton" name="refreshButton">
-      <property name="toolTip">
-       <string>Refresh the window</string>
-      </property>
-      <property name="text">
-       <string>Refresh</string>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="exportButton">
+        <property name="minimumSize">
+         <size>
+          <width>75</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Export all paths to text file</string>
+        </property>
+        <property name="text">
+         <string>Export Paths</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="refreshButton">
+        <property name="minimumSize">
+         <size>
+          <width>75</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Refresh the window</string>
+        </property>
+        <property name="text">
+         <string>Refresh</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

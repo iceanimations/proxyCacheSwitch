@@ -11,6 +11,7 @@ import qtify_maya_window as qtfy
 import os.path as osp
 import backend
 import appUsageApp
+import subprocess
 import cui
 
 reload(backend)
@@ -30,6 +31,9 @@ class UI(Form, Base):
         self.proxyDeleteButton.hide()
         self.gpuDeleteButton.hide()
         self.selectionDeleteButton.hide()
+        self.selectionHLButton.hide()
+        self.selectionPGButton.hide()
+        self.selectionReloadButton.hide()
         self.setWindowTitle(__title__)
         
         self.proxyLow = False
@@ -73,10 +77,36 @@ class UI(Form, Base):
         self.selectionReloadButton.clicked.connect(self.reloadSelection)
         self.selectionDeleteButton.clicked.connect(self.deleteSelection)
         self.refreshButton.clicked.connect(self.refresh)
+        self.exportButton.clicked.connect(self.exportPaths)
         
         self.populate()
 
         appUsageApp.updateDatabase('proxyCacheSwitch')
+        
+    def helpSort(self, path):
+        if 'vegetation' in path.lower(): return 0
+        else: return 1
+        
+    def exportPaths(self):
+        try:
+            filename = QFileDialog.getSaveFileName(self, 'Save File', '', '*.txt')
+            if filename:
+                pPaths = set()
+                for item in self.proxyItems:
+                    pPaths.add(item.getFileName())
+                gPaths = set()
+                for item in self.gpuItems:
+                    gPaths.add(item.getFileName())
+                with open(filename, 'w') as f:
+                    if pPaths:
+                        f.write('PROXIES'+'\r\n'*2+ '\r\n'.join(sorted(pPaths, key=self.helpSort)))
+                    if gPaths:
+                        f.write('\r\n'*3+'GPU CACHE'+'\r\n'*2+ '\r\n'.join(sorted(gPaths, key=self.helpSort)))
+                if osp.exists(filename):
+                    subprocess.Popen('notepad %s'%osp.normpath(filename))
+        except Exception as ex:
+            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
+            
         
     def populate(self):
         errors = []
@@ -236,6 +266,9 @@ class BaseItem(Form2, Base2):
         self.reloadButton.clicked.connect(self.reload)
         self.pathBox.textChanged.connect(self.handlePathChange)
         self.deleteButton.clicked.connect(self.delete)
+        
+    def getFileName(self):
+        return self.item.getFileName()
         
     def delete(self):
         pass # to be implemented in child class
