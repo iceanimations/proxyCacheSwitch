@@ -50,6 +50,26 @@
     </widget>
    </item>
    <item>
+    <widget class="QToolButton" name="pmButton">
+     <property name="toolTip">
+      <string>Preview Mesh</string>
+     </property>
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="bbButton">
+     <property name="toolTip">
+      <string>Bounding Box</string>
+     </property>
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QToolButton" name="hlButton">
      <property name="toolTip">
       <string>Switch to High/Low resolution</string>

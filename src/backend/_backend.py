@@ -150,6 +150,12 @@ class ProxyItem(BaseItem):
         pc.xform(xformNode, centerPivots=True)
         return xformNode
     
+    def switchToBB(self):
+        self.node.displayMode.set(0)
+        
+    def switchToPM(self):
+        self.node.displayMode.set(1)
+    
     def switchToGPU(self):
         self.removeAttr()
         nodes = self.getAllInstances()

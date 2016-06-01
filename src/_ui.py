@@ -59,6 +59,9 @@ class UI(Form, Base):
                           self.selectionDeleteButton: 'X.png'}
         for btn, img in buttonsMapping.items():
             btn.setIcon(QIcon(osp.join(icon_path, img)))
+            
+        self.bbButton.setText('BB')
+        self.pmButton.setText('PM')
         
         self.proxyHLButton.clicked.connect(self.switchProxiesToHL)
         self.proxyToGPUButton.clicked.connect(self.switchProxiesToGPU)
@@ -78,10 +81,20 @@ class UI(Form, Base):
         self.selectionDeleteButton.clicked.connect(self.deleteSelection)
         self.refreshButton.clicked.connect(self.refresh)
         self.exportButton.clicked.connect(self.exportPaths)
+        self.bbButton.clicked.connect(self.switchToBB)
+        self.pmButton.clicked.connect(self.switchToPM)
         
         self.populate()
 
         appUsageApp.updateDatabase('proxyCacheSwitch')
+        
+    def switchToBB(self):
+        for pItem in self.proxyItems:
+            pItem.switchToBB()
+    
+    def switchToPM(self):
+        for pItem in self.proxyItems:
+            pItem.switchToPM()
         
     def helpSort(self, path):
         if 'vegetation' in path.lower(): return 0
@@ -328,11 +341,22 @@ class ProxyItem(BaseItem):
         
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'G.png')))
         self.switchButton.setToolTip('Switch to GPU Cache')
+        self.bbButton.setText('BB')
+        self.pmButton.setText('PM')
+        
+        self.bbButton.clicked.connect(self.switchToBB)
+        self.pmButton.clicked.connect(self.switchToPM)
         
     def delete(self):
         self.item.delete()
         self.parentWin.proxyItems.remove(self)
         self.deleteLater()
+        
+    def switchToBB(self):
+        self.item.switchToBB()
+        
+    def switchToPM(self):
+        self.item.switchToPM()
         
     def switch(self, refresh=True):
         self.item.switchToGPU()
@@ -341,6 +365,9 @@ class ProxyItem(BaseItem):
 class GPUItem(BaseItem):
     def __init__(self, parent, gpuItem):
         super(GPUItem, self).__init__(parent, gpuItem)
+        
+        self.bbButton.hide()
+        self.pmButton.hide()
 
         self.switchButton.setIcon(QIcon(osp.join(icon_path, 'P.png')))
         self.switchButton.setToolTip('Switch to Proxy')
