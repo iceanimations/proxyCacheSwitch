@@ -93,6 +93,7 @@ class UI(Form, Base):
     def removeDuplicateProxies(self):
         try:
             backend.removeDuplicateProxies()
+            self.populate()
         except Exception as ex:
             self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
         
