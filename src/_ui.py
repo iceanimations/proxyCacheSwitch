@@ -62,6 +62,7 @@ class UI(Form, Base):
             
         self.bbButton.setText('BB')
         self.pmButton.setText('PM')
+        self.removeDuplicateProxyButton.setText('MD')
         
         self.proxyHLButton.clicked.connect(self.switchProxiesToHL)
         self.proxyToGPUButton.clicked.connect(self.switchProxiesToGPU)
@@ -83,10 +84,17 @@ class UI(Form, Base):
         self.exportButton.clicked.connect(self.exportPaths)
         self.bbButton.clicked.connect(self.switchToBB)
         self.pmButton.clicked.connect(self.switchToPM)
+        self.removeDuplicateProxyButton.clicked.connect(self.removeDuplicateProxies)
         
         self.populate()
 
         appUsageApp.updateDatabase('proxyCacheSwitch')
+        
+    def removeDuplicateProxies(self):
+        try:
+            backend.removeDuplicateProxies()
+        except Exception as ex:
+            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
         
     def switchToBB(self):
         for pItem in self.proxyItems:

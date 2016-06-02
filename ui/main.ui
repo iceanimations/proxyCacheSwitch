@@ -58,6 +58,16 @@
            </spacer>
           </item>
           <item>
+           <widget class="QToolButton" name="removeDuplicateProxyButton">
+            <property name="toolTip">
+             <string>Merge duplicate Proxies</string>
+            </property>
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QToolButton" name="pmButton">
             <property name="toolTip">
              <string>Preview Mesh</string>

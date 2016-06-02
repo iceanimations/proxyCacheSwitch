@@ -9,6 +9,7 @@ import os.path as osp
 import iutil
 import subprocess
 import os
+from collections import Counter
 
 reload(iutil)
 
@@ -56,6 +57,28 @@ def getGPUItems():
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
+
+def removeDuplicateProxies():
+    proxies = [osp.normpath(proxy.getFileName()) for proxy in getProxyItems()[0]]
+    if proxies:
+        paths = [path for path, val in Counter(proxies).items() if val > 1]
+        for path in paths:
+            _mergeProxyNodes([item.node for item in getProxyItems()[0] if osp.normpath(item.getFileName()) == path])
+
+def _mergeProxyNodes(nodes):
+    node = nodes[0]
+    nodes = nodes[1:]
+    mainShape = node.outMesh.outputs()[0].getShape(ni=True)
+    if mainShape:
+        for nd in nodes:
+            shape = nd.outMesh.outputs()[0].getShape(ni=True)
+            if shape:
+                parents = shape.listRelatives(ap=True)
+                pc.delete([shape, nd])
+                for pt in parents:
+                    pc.parent(mainShape, pt, shape=True, addObject=True)
+            else:
+                pc.delete(nd)
     
 class BaseItem(object):
     def __init__(self, node=None):
@@ -186,20 +209,10 @@ class ProxyItem(BaseItem):
                 self.copyTransform(node, gpuNode)
     
     def getAllInstances(self):
-        for transform in self.node.outMesh.outputs():
-            try:
-                nodes = transform.getShapes(ni=True)[0].listRelatives(ap=True)
-                tempNodes = []
-                for node in nodes:
-                    if not node.hasAttr('swn'):
-                        tempNodes.append(node)
-                for node in tempNodes:
-                    nodes.remove(node)
-                for node in tempNodes:
-                    nodes.append(node)
-                return nodes
-            except:
-                pass
+        try:
+            return self.node.outMesh.outputs()[0].getShapes(ni=True)[0].listRelatives(ap=True)
+        except:
+            pass
     
     def select(self, add=False):
         nodes = self.getAllInstances()
@@ -252,16 +265,7 @@ class GPUItem(BaseItem):
                 self.copyTransform(node, pNode)
                 
     def getAllInstances(self):
-        nodes = self.node.listRelatives(ap=True)
-        tempNodes = []
-        for node in nodes:
-            if not node.hasAttr('swn'):
-                tempNodes.append(node)
-        for node in tempNodes:
-            nodes.remove(node)
-        for node in tempNodes:
-            nodes.append(node)
-        return nodes
+        return self.node.listRelatives(ap=True)
 
     def select(self, add=False):
         pc.select(self.getAllInstances(), add=add)
