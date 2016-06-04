@@ -79,6 +79,22 @@ def _mergeProxyNodes(nodes):
                     pc.parent(mainShape, pt, shape=True, addObject=True)
             else:
                 pc.delete(nd)
+                
+def tearSelection():
+    transforms = pc.ls(sl=True, type=pc.nt.Transform)
+    mainShape = transforms[0].getShape(ni=True)
+    shader = mainShape.instObjGroups.outputs()[0]
+    mainShape2 = transforms[1].getShape(ni=True)
+    pc.select(mainShape)
+    node = pc.duplicate(rr=True, un=True)
+    shape = node[0].getShape(ni=True)
+    shape.instObjGroups.disconnect()
+    for transform in transforms:
+        pc.parent(shape, transform, addObject=True, shape=True)
+    for node2 in [mainShape, mainShape2]:
+        pc.mel.eval('parent -removeObject -shape %s'%node2.name())
+    pc.delete(node)
+    pc.sets(shader, e=True, fe=transforms)
     
 class BaseItem(object):
     def __init__(self, node=None):

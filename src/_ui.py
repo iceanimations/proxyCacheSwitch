@@ -175,7 +175,11 @@ class UI(Form, Base):
         pass
     
     def tearSelection(self):
-        pass
+        try:
+            backend.tearSelection()
+            self.populate()
+        except Exception as ex:
+            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
     
     def getItemFromSelection(self):
         '''returns GPUItem/ProxyItem from selected object in the scene'''
