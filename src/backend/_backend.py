@@ -222,6 +222,7 @@ class ProxyItem(BaseItem):
                         gpuNode = node.swn.outputs()[0]
                     gpuNode.visibility.set(1)
                     node.visibility.set(0)
+                    node.getShape(ni=True).visibility.set(0)
                 else:
                     if gpuNode:
                         gpuNode = pc.instance(gpuNode)[0]
@@ -233,6 +234,7 @@ class ProxyItem(BaseItem):
                         pc.addAttr(gpuNode, sn='swn', ln='switchNode', at='message', h=True)
                     node.swn.connect(gpuNode.swn)
                     node.visibility.set(0)
+                    node.getShape(ni=True).visibility.set(0)
                 self.copyTransform(node, gpuNode)
     
     def getAllInstances(self):
@@ -281,6 +283,7 @@ class GPUItem(BaseItem):
                     except IndexError:
                         pNode = node.swn.inputs()[0]
                     pNode.visibility.set(1)
+                    pNode.getShape(ni=True).visibility.set(1)
                     node.visibility.set(0)
                 else:
                     if pNode:
