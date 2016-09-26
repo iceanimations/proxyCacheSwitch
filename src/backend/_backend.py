@@ -28,6 +28,13 @@ def switchHLPath(path, hi=False, low=False):
         return iutil.getLatestFile([osp.join(dirPath, phile) for phile in os.listdir(dirPath) if phile.endswith(ext)])
     except: pass
 
+def getProxyPreviewMesh(proxy):
+    ''':type: pc.nt.RedshiftProxyMesh'''
+    meshes = proxy.outMesh.listFuture(exactType='mesh')
+    for mesh in meshes:
+        if not mesh.io.get():
+            return mesh
+
 def getProxyItems():
     errors = []
     items = []
@@ -35,10 +42,14 @@ def getProxyItems():
         proxies = pc.ls(exactType=pc.nt.RedshiftProxyMesh)
         if proxies:
             for proxy in proxies:
+                preview = getProxyPreviewMesh(proxy)
                 try:
-                    if proxy.outMesh.outputs()[0].visibility.get():
+                    if preview and preview.visibility.get():
                         items.append(ProxyItem(proxy))
-                except: pass
+                except Exception as e:
+                    import traceback
+                    print 'Error while getting proxies', str(e)
+                    traceback.print_exc()
     except Exception as ex:
         errors.append(str(ex))
     return items, errors
@@ -226,7 +237,11 @@ class ProxyItem(BaseItem):
     
     def getAllInstances(self):
         try:
-            return self.node.outMesh.outputs()[0].getShapes(ni=True)[0].listRelatives(ap=True)
+            preview = getProxyPreviewMesh(self.node)
+            if preview:
+                return preview.listRelatives(ap=True)
+            else:
+                return []
         except:
             pass
     
