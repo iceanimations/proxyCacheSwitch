@@ -79,17 +79,22 @@ def removeDuplicateProxies():
 def _mergeProxyNodes(nodes):
     node = nodes[0]
     nodes = nodes[1:]
-    mainShape = node.outMesh.outputs()[0].getShape(ni=True)
-    if mainShape:
-        for nd in nodes:
-            shape = nd.outMesh.outputs()[0].getShape(ni=True)
-            if shape:
-                parents = shape.listRelatives(ap=True)
-                pc.delete([shape, nd])
-                for pt in parents:
-                    pc.parent(mainShape, pt, shape=True, addObject=True)
-            else:
-                pc.delete(nd)
+    try:
+        mainShape = node.outMesh.future(type='mesh')[0]
+    except IndexError:
+        node = nodes[-1]
+        nodes = nodes[:-1]
+        mainShape = node.outMesh.future(type='mesh')[0]
+    for nd in nodes:
+        try:
+            shape = nd.outMesh.future(type='mesh')[0]
+        except IndexError:
+            pc.delete(nd)
+            continue
+        parents = shape.listRelatives(ap=True)
+        pc.delete([shape, nd])
+        for pt in parents:
+            pc.parent(mainShape, pt, shape=True, addObject=True)
                 
 def tearSelection():
     transforms = pc.ls(sl=True, type=pc.nt.Transform)
