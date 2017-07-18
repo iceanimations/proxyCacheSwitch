@@ -111,7 +111,46 @@ def tearSelection():
         pc.mel.eval('parent -removeObject -shape %s'%node2.name())
     pc.delete(node)
     pc.sets(shader, e=True, fe=transforms)
-    
+
+
+def separateProxies(nodes=None):
+    '''Convenience function to separate RedshiftProxyMesh nodes that point to
+    more than one meshes. This structure can be created duplicate (copy) with
+    input connections
+
+    @param nodes list
+
+    @return list
+    '''
+
+    selection = pc.ls()
+    if nodes is not None:
+        pc.select(nodes)
+
+    transforms = pc.ls(sl=True, exactType='transform')
+
+    proxies = []
+    for transform in transforms:
+        shape = transform.getShape(ni=True)
+        proxies.extend(shape.listHistory(type='RedshiftProxyMesh'))
+
+    dups = []
+    for proxy in proxies:
+        outputs = proxy.outMesh.outputs(p=True)
+        if len(outputs) > 1:
+            for idx, output in enumerate(outputs):
+                if idx == 1:
+                    continue
+                dup = pc.duplicate(proxy, rr=True)[0]
+                dups.append(dup)
+            dup.outMesh.connect(output, f=True)
+
+    if nodes:
+        pc.select(selection)
+
+    return dups
+
+
 class BaseItem(object):
     def __init__(self, node=None):
         self.node = node

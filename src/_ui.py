@@ -56,7 +56,8 @@ class UI(Form, Base):
                           self.selectionFocusButton: 'F.png',
                           self.selectionTearButton: 'T.png',
                           self.selectionReloadButton: 'R.png',
-                          self.selectionDeleteButton: 'X.png'}
+                          self.selectionDeleteButton: 'X.png',
+                          self.selectionSeparateProxiesButton: 'S.png' }
         for btn, img in buttonsMapping.items():
             btn.setIcon(QIcon(osp.join(icon_path, img)))
             
@@ -80,6 +81,7 @@ class UI(Form, Base):
         self.selectionTearButton.clicked.connect(self.tearSelection)
         self.selectionReloadButton.clicked.connect(self.reloadSelection)
         self.selectionDeleteButton.clicked.connect(self.deleteSelection)
+        self.selectionSeparateProxiesButton.clicked.connect(self.separate)
         self.refreshButton.clicked.connect(self.refresh)
         self.exportButton.clicked.connect(self.exportPaths)
         self.bbButton.clicked.connect(self.switchToBB)
@@ -177,6 +179,13 @@ class UI(Form, Base):
     def tearSelection(self):
         try:
             backend.tearSelection()
+            self.populate()
+        except Exception as ex:
+            self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
+
+    def separate(self):
+        try:
+            backend.separateProxies()
             self.populate()
         except Exception as ex:
             self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
