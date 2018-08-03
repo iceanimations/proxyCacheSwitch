@@ -5,7 +5,7 @@ Created on Jan 7, 2016
 '''
 
 from uiContainer import uic
-from PyQt4.QtGui import QMessageBox, QFileDialog, QIcon
+from PyQt4.QtGui import QMessageBox, QFileDialog, QIcon, qApp
 from PyQt4.QtCore import QSize
 import qtify_maya_window as qtfy
 import os.path as osp
@@ -13,6 +13,7 @@ import backend
 import appUsageApp
 import subprocess
 import cui
+import shutil
 
 reload(backend)
 reload(cui)
@@ -87,10 +88,75 @@ class UI(Form, Base):
         self.bbButton.clicked.connect(self.switchToBB)
         self.pmButton.clicked.connect(self.switchToPM)
         self.removeDuplicateProxyButton.clicked.connect(self.removeDuplicateProxies)
+        self.exportProxiesButton.clicked.connect(self.exportProxies)
+        self.loadProxiesButton.clicked.connect(self.loadProxies)
         
         self.populate()
+        self.progressBar.hide()
 
         appUsageApp.updateDatabase('proxyCacheSwitch')
+        
+    def exportProxies(self):
+        errors = {}
+        path = QFileDialog.getExistingDirectory(self, __title__, '', QFileDialog.ShowDirsOnly)
+        if path:
+            if osp.exists(path):
+                try:
+                    pPaths = set()
+                    for item in self.proxyItems:
+                        pPaths.add(item.getFileName())
+                    existingProxies = []
+                    missingProxies = []
+                    for pPath in pPaths:
+                        if osp.exists(pPath):
+                            existingProxies.append(pPath)
+                        else:
+                            missingProxies.append(pPath)
+                    if missingProxies:
+                        btn = self.showMessage(msg='Some proxy files do not exist\n\n' + '\n'.join(missingProxies),
+                                               ques='Do you want to continue?',
+                                               icon=QMessageBox.Question,
+                                               btns=QMessageBox.Yes|QMessageBox.No)
+                        if btn != QMessageBox.Yes:
+                            return
+                    self.progressBar.show()
+                    self.progressBar.setMaximum(len(existingProxies))
+                    self.progressBar.setMinimum(0)
+                    self.progressBar.setValue(0)
+                    count = 1
+                    for pPath in existingProxies:
+                        if not osp.exists(osp.join(path, osp.basename(pPath))):
+                            shutil.copy2(pPath, path)
+                        self.progressBar.setValue(count)
+                        count += 1
+                        qApp.processEvents()
+                except Exception as ex:
+                    self.showMessage(msg=str(ex), icon=QMessageBox.Critical)
+                finally:
+                    self.progressBar.hide()
+                    
+                
+    
+    def loadProxies(self):
+        files = QFileDialog.getOpenFileNames(self, __title__, '', '*.rs')
+        if files:
+            try:
+                missingFiles = set()
+                for pItem in self.proxyItems:
+                    basename = osp.basename(pItem.getFileName())
+                    for phile in files:
+                        if basename.lower() == osp.basename(phile).lower():
+                            pItem.setFileName(phile)
+                            break
+                    else:
+                        missingFiles.add(pItem.getFileName())
+                self.refresh()
+                if missingFiles:
+                    self.showMessage(msg='Could not find files matching the following paths\n\n' +
+                                     '\n'.join(missingFiles))
+            except Exception as ex:
+                self.showMessage(msg=str(ex))
+                
         
     def removeDuplicateProxies(self):
         try:
@@ -304,6 +370,9 @@ class BaseItem(Form2, Base2):
         
     def getFileName(self):
         return self.item.getFileName()
+    
+    def setFileName(self, filename):
+        self.item.setFileName(filename)
         
     def delete(self):
         pass # to be implemented in child class
